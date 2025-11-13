@@ -1,4 +1,4 @@
-const CACHE_NAME = 'viltrum-fitness-v1';
+const CACHE_NAME = 'viltrum-fitness-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -29,6 +29,13 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
+// Listen per il messaggio SKIP_WAITING (per forzare aggiornamento)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating...');
@@ -49,6 +56,23 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  const requestUrl = new URL(event.request.url);
+  
+  // ⚠️ IMPORTANTE: NON intercettare URL con token di autenticazione
+  // Se l'URL contiene access_token, refresh_token, o type (parametri Supabase auth)
+  // lascia che il browser gestisca la richiesta normalmente
+  const hasAuthParams = requestUrl.hash.includes('access_token') || 
+                        requestUrl.hash.includes('refresh_token') ||
+                        requestUrl.hash.includes('type=recovery') ||
+                        requestUrl.hash.includes('type=signup') ||
+                        requestUrl.hash.includes('type=magiclink');
+  
+  if (hasAuthParams) {
+    console.log('[Service Worker] Skipping auth URL:', requestUrl.href);
+    // Non intercettare - lascia che il browser gestisca
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

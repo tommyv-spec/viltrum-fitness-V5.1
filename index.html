@@ -886,33 +886,12 @@
                     localStorage.setItem('userName', data.user.user_metadata?.username || 'User');
                     localStorage.setItem('userFullName', data.user.user_metadata?.full_name || 'User');
                     
-                    // ⚠️ IMPORTANTE: Se è un recovery (reset password), apri il modal!
+                    // ⚠️ IMPORTANTE: Se è un recovery (reset password), NON redirectare
+                    // L'utente deve prima impostare la nuova password
                     if (type === 'recovery') {
-                        console.log('🔐 Recovery detected - opening reset password modal');
-                        
-                        // Aspetta che il DOM sia pronto, poi apri il modal
-                        setTimeout(() => {
-                            const authModal = document.getElementById('auth-modal');
-                            const resetPasswordInput = document.getElementById('reset-password');
-                            
-                            if (authModal) {
-                                authModal.classList.add('active');
-                                // Mostra il form di reset password
-                                document.getElementById('reset-password-view')?.classList.add('active');
-                                document.getElementById('login-view')?.classList.remove('active');
-                                document.getElementById('signup-view')?.classList.remove('active');
-                                document.getElementById('forgot-password-view')?.classList.remove('active');
-                                
-                                // Focus sull'input password
-                                setTimeout(() => resetPasswordInput?.focus(), 300);
-                                
-                                console.log('✅ Reset password modal opened');
-                            } else {
-                                console.error('❌ Modal non trovato!');
-                            }
-                        }, 100);
-                        
-                        // NON fare redirect!
+                        console.log('🔐 Recovery detected - waiting for password reset');
+                        // Il codice sotto gestirà l'apertura del modal di reset password
+                        // NON fare redirect qui!
                         return;
                     }
                     
@@ -1539,15 +1518,49 @@
   
   <!-- Service Worker Registration -->
   <script>
+    // SERVICE WORKER with Auto-Update
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
           .then((registration) => {
-            console.log('Service Worker registered successfully:', registration.scope);
+            console.log('✅ Service Worker registered:', registration.scope);
+            
+            // Forza controllo aggiornamenti ogni 30 secondi
+            setInterval(() => {
+              registration.update();
+            }, 30000);
+            
+            // Se c'è un SW in attesa, attivalo
+            if (registration.waiting) {
+              console.log('⚡ New Service Worker waiting, activating...');
+              registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+            
+            // Ascolta per nuovi SW in attesa
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('⚡ New Service Worker available, activating...');
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                }
+              });
+            });
           })
           .catch((error) => {
-            console.log('Service Worker registration failed:', error);
+            console.log('❌ Service Worker registration failed:', error);
           });
+        
+        // Ricarica quando il nuovo SW prende controllo
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            console.log('🔄 New Service Worker activated, reloading...');
+            window.location.reload();
+          }
+        });
       });
     }
   </script>
