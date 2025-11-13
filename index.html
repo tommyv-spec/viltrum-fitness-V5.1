@@ -886,12 +886,33 @@
                     localStorage.setItem('userName', data.user.user_metadata?.username || 'User');
                     localStorage.setItem('userFullName', data.user.user_metadata?.full_name || 'User');
                     
-                    // ⚠️ IMPORTANTE: Se è un recovery (reset password), NON redirectare
-                    // L'utente deve prima impostare la nuova password
+                    // ⚠️ IMPORTANTE: Se è un recovery (reset password), apri il modal!
                     if (type === 'recovery') {
-                        console.log('🔐 Recovery detected - waiting for password reset');
-                        // Il codice sotto gestirà l'apertura del modal di reset password
-                        // NON fare redirect qui!
+                        console.log('🔐 Recovery detected - opening reset password modal');
+                        
+                        // Aspetta che il DOM sia pronto, poi apri il modal
+                        setTimeout(() => {
+                            const authModal = document.getElementById('auth-modal');
+                            const resetPasswordInput = document.getElementById('reset-password');
+                            
+                            if (authModal) {
+                                authModal.classList.add('active');
+                                // Mostra il form di reset password
+                                document.getElementById('reset-password-view')?.classList.add('active');
+                                document.getElementById('login-view')?.classList.remove('active');
+                                document.getElementById('signup-view')?.classList.remove('active');
+                                document.getElementById('forgot-password-view')?.classList.remove('active');
+                                
+                                // Focus sull'input password
+                                setTimeout(() => resetPasswordInput?.focus(), 300);
+                                
+                                console.log('✅ Reset password modal opened');
+                            } else {
+                                console.error('❌ Modal non trovato!');
+                            }
+                        }, 100);
+                        
+                        // NON fare redirect!
                         return;
                     }
                     
