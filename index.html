@@ -1105,7 +1105,7 @@
       if (result.success) {
         showMessage(loginMessage, "Accesso riuscito!", "success");
         setTimeout(() => {
-          window.location.href = "dashboard.html";
+          safeDashboardRedirect();
         }, 500);
       } else {
         showMessage(loginMessage, result.error || "Errore durante il login", "error");
@@ -1156,7 +1156,7 @@
         
         // Redirect to dashboard immediately
         setTimeout(() => {
-          window.location.href = "dashboard.html";
+          safeDashboardRedirect();
         }, 500);
       } else {
         showMessage(signupMessage, result.error || "Errore durante la registrazione", "error");
@@ -1219,6 +1219,156 @@
       if (e.key === 'Enter') handleForgotPassword();
     });
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // HELPER: Rilevamento Browser Email e Redirect Safe
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    /**
+     * Rileva se l'utente sta usando un browser in-app (Gmail, Outlook, etc.)
+     */
+    function isInAppBrowser() {
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        
+        // Lista di pattern che indicano browser in-app
+        const inAppBrowserPatterns = [
+            /FBAN|FBAV/i,           // Facebook App
+            /Instagram/i,            // Instagram App
+            /Twitter/i,              // Twitter App
+            /Line\//i,               // Line App
+            /WhatsApp/i,             // WhatsApp in-app
+            /GSA\//i,                // Google Search App
+            /Messenger/i,            // Facebook Messenger
+            /LinkedIn/i,             // LinkedIn App
+            /Gmail/i,                // Gmail App
+            /Outlook/i,              // Outlook App
+            /YahooMail/i,            // Yahoo Mail App
+            /Thunderbird/i,          // Thunderbird
+            /Mailbox/i,              // Mailbox App
+        ];
+        
+        return inAppBrowserPatterns.some(pattern => pattern.test(ua));
+    }
+    
+    /**
+     * Mostra prompt per aprire nel browser esterno
+     */
+    function showExternalBrowserPrompt(url) {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999999;
+            padding: 20px;
+        `;
+        
+        modal.innerHTML = `
+            <div style="
+                background: #1a1a1a;
+                border: 1px solid #333;
+                border-radius: 10px;
+                padding: 30px;
+                max-width: 400px;
+                width: 100%;
+                text-align: center;
+            ">
+                <div style="font-size: 48px; margin-bottom: 20px;">🌐</div>
+                
+                <h2 style="
+                    font-family: 'Staatliches', sans-serif;
+                    font-size: 24px;
+                    color: #fff;
+                    margin: 0 0 15px 0;
+                    letter-spacing: 1px;
+                ">APRI NEL BROWSER</h2>
+                
+                <p style="
+                    color: #ccc;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    margin: 0 0 25px 0;
+                ">
+                    Per continuare, apri questa pagina nel tuo browser (Chrome, Safari, Firefox).
+                </p>
+                
+                <button id="copy-url-btn" style="
+                    width: 100%;
+                    padding: 15px;
+                    background: #fff;
+                    color: #000;
+                    border: none;
+                    border-radius: 5px;
+                    font-family: 'Staatliches', sans-serif;
+                    font-size: 16px;
+                    letter-spacing: 1px;
+                    cursor: pointer;
+                    margin-bottom: 10px;
+                ">
+                    📋 COPIA LINK
+                </button>
+                
+                <p style="
+                    color: #888;
+                    font-size: 12px;
+                    margin: 15px 0 0 0;
+                    line-height: 1.4;
+                ">
+                    Copia il link, esci dall'app email, e incollalo nel browser
+                </p>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const copyBtn = modal.querySelector('#copy-url-btn');
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(url);
+                copyBtn.textContent = '✅ LINK COPIATO!';
+                copyBtn.style.background = '#4ade80';
+                
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 COPIA LINK';
+                    copyBtn.style.background = '#fff';
+                }, 2000);
+            } catch (err) {
+                const textarea = document.createElement('textarea');
+                textarea.value = url;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                copyBtn.textContent = '✅ LINK COPIATO!';
+                copyBtn.style.background = '#4ade80';
+            }
+        });
+    }
+    
+    /**
+     * Redirect safe alla dashboard che gestisce browser email
+     */
+    function safeDashboardRedirect() {
+        const dashboardUrl = window.location.origin + "/dashboard.html";
+        
+        if (isInAppBrowser()) {
+            console.log('⚠️ Browser in-app rilevato - mostra prompt');
+            showExternalBrowserPrompt(dashboardUrl);
+        } else {
+            console.log('✅ Browser normale - redirect diretto');
+            window.location.href = dashboardUrl;
+        }
+    }
+
+
     // RESET PASSWORD HANDLER
     async function handleResetPassword(e) {
       if (e) e.preventDefault();
@@ -1255,7 +1405,8 @@
         } else {
           showMessage(resetMessage, "✅ Password aggiornata con successo!", "success");
           setTimeout(() => {
-            window.location.href = "dashboard.html";
+            // Usa URL assoluto per evitare problemi con hash parameters dall'email
+            safeDashboardRedirect();
           }, 1500);
         }
       } catch (error) {
