@@ -1,4 +1,4 @@
-const CACHE_NAME = 'viltrum-fitness-v2';
+const CACHE_NAME = 'viltrum-fitness-v3'; // Increment version to force cache refresh
 const urlsToCache = [
   '/',
   '/index.html',
@@ -58,9 +58,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
   
-  // ⚠️ IMPORTANTE: NON intercettare URL con token di autenticazione
-  // Se l'URL contiene access_token, refresh_token, o type (parametri Supabase auth)
-  // lascia che il browser gestisca la richiesta normalmente
+  // ⚠️ CRITICAL FIX: Skip service worker for ALL navigation requests
+  // This prevents redirect mode errors when navigating between pages
+  if (event.request.mode === 'navigate') {
+    console.log('[Service Worker] Skipping navigation request:', requestUrl.pathname);
+    return; // Let browser handle navigation normally
+  }
+  
+  // ⚠️ IMPORTANT: Don't intercept URLs with auth tokens
   const hasAuthParams = requestUrl.hash.includes('access_token') || 
                         requestUrl.hash.includes('refresh_token') ||
                         requestUrl.hash.includes('type=recovery') ||
@@ -69,31 +74,48 @@ self.addEventListener('fetch', (event) => {
   
   if (hasAuthParams) {
     console.log('[Service Worker] Skipping auth URL:', requestUrl.href);
-    // Non intercettare - lascia che il browser gestisca
-    return;
+    return; // Let browser handle auth URLs
   }
   
+  // ⚠️ Skip external requests (Supabase, Google APIs, etc)
+  if (!requestUrl.origin.includes('viltrumfitness.com') && 
+      !requestUrl.origin.includes('localhost') &&
+      requestUrl.origin !== self.location.origin) {
+    console.log('[Service Worker] Skipping external request:', requestUrl.origin);
+    return; // Let browser handle external requests
+  }
+  
+  // Handle the request with cache-first strategy
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
         // Cache hit - return response
         if (response) {
+          console.log('[Service Worker] Serving from cache:', requestUrl.pathname);
           return response;
         }
         
         // Clone the request
         const fetchRequest = event.request.clone();
         
-        return fetch(fetchRequest).then((response) => {
+        // ✅ FIX: Explicitly set redirect mode to 'follow'
+        const fetchOptions = {
+          redirect: 'follow',
+          credentials: event.request.credentials,
+          cache: event.request.cache
+        };
+        
+        return fetch(fetchRequest, fetchOptions).then((response) => {
           // Check if valid response
           if (!response || response.status !== 200 || response.type !== 'basic') {
+            console.log('[Service Worker] Invalid response, not caching');
             return response;
           }
           
           // Clone the response
           const responseToCache = response.clone();
           
-          // Cache the new response
+          // Cache the new response (async, don't wait)
           caches.open(CACHE_NAME)
             .then((cache) => {
               cache.put(event.request, responseToCache);
@@ -102,7 +124,8 @@ self.addEventListener('fetch', (event) => {
           return response;
         });
       })
-      .catch(() => {
+      .catch((error) => {
+        console.log('[Service Worker] Fetch failed:', error);
         // Return offline page if available
         return caches.match('/index.html');
       })
