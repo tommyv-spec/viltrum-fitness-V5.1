@@ -886,11 +886,20 @@
                     localStorage.setItem('userName', data.user.user_metadata?.username || 'User');
                     localStorage.setItem('userFullName', data.user.user_metadata?.full_name || 'User');
                     
+                    // ⚠️ IMPORTANTE: Se è un recovery (reset password), NON redirectare
+                    // L'utente deve prima impostare la nuova password
+                    if (type === 'recovery') {
+                        console.log('🔐 Recovery detected - waiting for password reset');
+                        // Il codice sotto gestirà l'apertura del modal di reset password
+                        // NON fare redirect qui!
+                        return;
+                    }
+                    
                     // Pulisci l'URL (rimuovi i tokens per sicurezza)
                     const cleanUrl = window.location.pathname + window.location.search;
                     window.history.replaceState({}, document.title, cleanUrl);
                     
-                    // Redirect alla dashboard
+                    // Redirect alla dashboard (solo per signup/magiclink)
                     console.log('Redirecting to dashboard...');
                     window.location.href = 'dashboard.html';
                 }
