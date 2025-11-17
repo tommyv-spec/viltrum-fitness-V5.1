@@ -1,4 +1,4 @@
-const CACHE_NAME = 'viltrum-fitness-v3';
+const CACHE_NAME = 'viltrum-fitness-v6.1';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -8,6 +8,9 @@ const urlsToCache = [
   '/style.css',
   '/script.js',
   '/auth.js',
+  '/session-cache.js',
+  '/nutrition-app.js',
+  '/nutrition-engine.js',
   '/viewport.js',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
@@ -15,11 +18,11 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing v3...');
+  console.log('[Service Worker] Installing v6.1...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('[Service Worker] Caching app shell v3');
+        console.log('[Service Worker] Caching app shell v6.1');
         return cache.addAll(urlsToCache);
       })
       .catch((error) => {
@@ -31,7 +34,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating v3...');
+  console.log('[Service Worker] Activating v6.1...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(

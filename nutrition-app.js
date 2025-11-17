@@ -272,6 +272,16 @@ function renderNutrientSlot(meal, slotType, slotData, isReadOnly) {
       html += `<span class="visual-help">${option.visualHelp}</span>`;
     }
     
+    // Mostra conversione crudo/cotto direttamente
+    if (option.rawWeight && option.cookedEquivalent) {
+      html += `<span class="visual-help">📊 = ~${option.cookedEquivalent}g cotto</span>`;
+    }
+    
+    // Mostra conversione pezzi/grammi direttamente
+    if (option.unit === 'pezzi' && option.gramsEquivalent) {
+      html += `<span class="visual-help">⚖️ = ~${option.gramsEquivalent}g</span>`;
+    }
+    
     // Badge alternativa
     if (option.isAlternative || !option.inPlan) {
       html += `<span class="badge-alternative">ALTERNATIVA</span>`;
@@ -280,16 +290,6 @@ function renderNutrientSlot(meal, slotType, slotData, isReadOnly) {
     // Badge warning
     if (hasWarning) {
       html += `<span class="warning-badge">⚠️</span>`;
-    }
-    
-    // Pulsante conversione crudo/cotto
-    if (option.rawWeight && option.cookedEquivalent && !isReadOnly) {
-      html += `<button class="btn-convert" onclick="event.stopPropagation(); showCookedEquivalent('${option.name}', ${option.qty}, ${option.cookedEquivalent})">📊 Vedi cotto</button>`;
-    }
-    
-    // Pulsante conversione pezzi/grammi
-    if (!isReadOnly && option.unit === 'pezzi' && option.gramsEquivalent) {
-      html += `<button class="btn-convert" onclick="event.stopPropagation(); showPiecesConversion('${option.name}', ${option.qty}, ${option.gramsEquivalent})">⚖️ Vedi grammi</button>`;
     }
     
     html += `</div>`;
