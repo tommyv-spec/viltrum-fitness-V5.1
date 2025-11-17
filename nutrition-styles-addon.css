@@ -1,0 +1,120 @@
+/* NUTRITION MODULE - Additional Styles for V1.5 Features */
+
+.btn-find-alternative {
+  width: 100%;
+  margin-top: 15px;
+  padding: 12px;
+  background: rgba(100, 200, 255, 0.1);
+  border: 1px solid rgba(100, 200, 255, 0.3);
+  border-radius: 10px;
+  color: #87CEEB;
+  font-size: 15px;
+  font-family: 'Staatliches', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s;
+  letter-spacing: 0.5px;
+}
+
+.btn-find-alternative:hover {
+  background: rgba(100, 200, 255, 0.2);
+  border-color: rgba(100, 200, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.badge-alternative {
+  display: inline-block;
+  background: rgba(100, 200, 255, 0.2);
+  color: #87CEEB;
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  margin-top: 8px;
+  letter-spacing: 0.5px;
+}
+
+.warning-badge {
+  display: inline-block;
+  background: rgba(255, 150, 0, 0.2);
+  color: #FFA500;
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  margin-top: 8px;
+  letter-spacing: 0.5px;
+}
+
+.food-option.has-warning {
+  border-color: rgba(255, 150, 0, 0.5);
+}
+
+.modal-table {
+  width: 100%;
+  color: #FFF;
+  font-size: 14px;
+  border-collapse: collapse;
+  margin: 15px 0;
+}
+
+.modal-table th {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  color: #B0B0B0;
+}
+
+.modal-table td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.modal-table tr:last-child td {
+  border-bottom: none;
+}
+
+.conversion-result {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.conversion-result .big-number {
+  font-size: 28px;
+  color: #FFD700;
+  font-weight: bold;
+  margin: 15px 0;
+}
+
+.tip {
+  background: rgba(100, 200, 255, 0.1);
+  border-left: 3px solid #87CEEB;
+  padding: 12px;
+  margin: 15px 0;
+  border-radius: 5px;
+  color: #B0B0B0;
+}
+
+.warning-box {
+  background: rgba(255, 150, 0, 0.1);
+  border-left: 3px solid #FFA500;
+  padding: 12px;
+  margin: 15px 0;
+  border-radius: 5px;
+}
+
+.warning-box h4 {
+  color: #FFA500;
+  margin-bottom: 10px;
+}
+
+.warning-box ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.warning-box li {
+  margin: 5px 0;
+  color: #FFF;
+}

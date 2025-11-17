@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Viltrum Fitness">
+  <title>PWA Debug - Viltrum Fitness</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-192x192.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #000;
+      color: #fff;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: #4CAF50;
+      margin-bottom: 20px;
+    }
+    
+    h2 {
+      color: #2196F3;
+      margin: 30px 0 15px 0;
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+    }
+    
+    .status {
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      background: #1a1a1a;
+      border-left: 4px solid #666;
+    }
+    
+    .status.success {
+      border-left-color: #4CAF50;
+      background: #1a3a1a;
+    }
+    
+    .status.error {
+      border-left-color: #f44336;
+      background: #3a1a1a;
+    }
+    
+    .status.warning {
+      border-left-color: #ff9800;
+      background: #3a2a1a;
+    }
+    
+    .status-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    pre {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      margin: 10px 0;
+      border: 1px solid #333;
+    }
+    
+    button {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px 5px 5px 0;
+    }
+    
+    button:hover {
+      background: #1976D2;
+    }
+    
+    .code {
+      font-family: monospace;
+      background: #2a2a2a;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #4CAF50;
+    }
+    
+    ul {
+      margin-left: 20px;
+      margin-top: 10px;
+    }
+    
+    li {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Viltrum Fitness PWA Diagnostic Tool</h1>
+    
+    <div id="manifest-status"></div>
+    <div id="sw-status"></div>
+    <div id="https-status"></div>
+    <div id="icons-status"></div>
+    
+    <h2>Actions</h2>
+    <button onclick="checkManifest()">🔄 Re-check Manifest</button>
+    <button onclick="registerSW()">🔄 Re-register Service Worker</button>
+    <button onclick="checkIcons()">🖼️ Test Icons</button>
+    <button onclick="location.reload()">↻ Refresh Page</button>
+    
+    <h2>Installation Instructions</h2>
+    <div class="status">
+      <div class="status-title">After fixing any errors above:</div>
+      <ol>
+        <li>Close and reopen Chrome completely</li>
+        <li>Visit this page again</li>
+        <li>Wait 5-10 seconds</li>
+        <li>Look for install banner or go to Chrome menu → "Install app"</li>
+      </ol>
+    </div>
+    
+    <h2>Console Logs</h2>
+    <div class="status">
+      Open Chrome DevTools (three dots → More tools → Developer tools) and check the Console tab for any red errors.
+    </div>
+  </div>
+
+  <script>
+    // Check HTTPS
+    function checkHTTPS() {
+      const httpsDiv = document.getElementById('https-status');
+      const isHTTPS = window.location.protocol === 'https:';
+      
+      httpsDiv.innerHTML = `
+        <h2>🔒 HTTPS Check</h2>
+        <div class="status ${isHTTPS ? 'success' : 'error'}">
+          <div class="status-title">${isHTTPS ? '✅ HTTPS Enabled' : '❌ HTTPS Required'}</div>
+          <div>Current protocol: <span class="code">${window.location.protocol}</span></div>
+          ${!isHTTPS ? '<div style="margin-top:10px">PWA requires HTTPS. Deploy to a host with SSL certificate.</div>' : ''}
+        </div>
+      `;
+    }
+
+    // Check Manifest
+    async function checkManifest() {
+      const manifestDiv = document.getElementById('manifest-status');
+      manifestDiv.innerHTML = '<h2>📄 Manifest Check</h2><div class="status">Checking manifest.json...</div>';
+      
+      try {
+        const response = await fetch('./manifest.json');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const manifest = await response.json();
+        
+        let html = `
+          <h2>📄 Manifest Check</h2>
+          <div class="status success">
+            <div class="status-title">✅ Manifest Found & Valid</div>
+            <div><strong>Name:</strong> ${manifest.name}</div>
+            <div><strong>Short Name:</strong> ${manifest.short_name}</div>
+            <div><strong>Start URL:</strong> ${manifest.start_url}</div>
+            <div><strong>Display:</strong> ${manifest.display}</div>
+            <div><strong>Icons:</strong> ${manifest.icons.length} defined</div>
+          </div>
+        `;
+        
+        // Check if manifest link is in HTML
+        const manifestLink = document.querySelector('link[rel="manifest"]');
+        if (manifestLink) {
+          html += `
+            <div class="status success">
+              <div class="status-title">✅ Manifest Link Found</div>
+              <div>Link href: <span class="code">${manifestLink.href}</span></div>
+            </div>
+          `;
+        } else {
+          html += `
+            <div class="status error">
+              <div class="status-title">❌ Manifest Link Missing</div>
+              <div>Add to HTML: <span class="code">&lt;link rel="manifest" href="./manifest.json"&gt;</span></div>
+            </div>
+          `;
+        }
+        
+        manifestDiv.innerHTML = html;
+        
+      } catch (error) {
+        manifestDiv.innerHTML = `
+          <h2>📄 Manifest Check</h2>
+          <div class="status error">
+            <div class="status-title">❌ Manifest Error</div>
+            <div>${error.message}</div>
+            <div style="margin-top:10px">
+              <strong>Common fixes:</strong>
+              <ul>
+                <li>Ensure manifest.json is in the root directory</li>
+                <li>Check file permissions (should be readable)</li>
+                <li>Verify JSON syntax is valid</li>
+                <li>Clear browser cache and try again</li>
+              </ul>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Check Service Worker
+    async function checkSW() {
+      const swDiv = document.getElementById('sw-status');
+      
+      if (!('serviceWorker' in navigator)) {
+        swDiv.innerHTML = `
+          <h2>⚙️ Service Worker Check</h2>
+          <div class="status error">
+            <div class="status-title">❌ Service Workers Not Supported</div>
+            <div>Your browser doesn't support service workers. Try Chrome or Edge.</div>
+          </div>
+        `;
+        return;
+      }
+      
+      try {
+        const registration = await navigator.serviceWorker.getRegistration();
+        
+        if (registration) {
+          swDiv.innerHTML = `
+            <h2>⚙️ Service Worker Check</h2>
+            <div class="status success">
+              <div class="status-title">✅ Service Worker Registered</div>
+              <div><strong>Scope:</strong> <span class="code">${registration.scope}</span></div>
+              <div><strong>State:</strong> ${registration.active ? '🟢 Active' : '🟡 Installing'}</div>
+            </div>
+          `;
+        } else {
+          swDiv.innerHTML = `
+            <h2>⚙️ Service Worker Check</h2>
+            <div class="status warning">
+              <div class="status-title">⚠️ Service Worker Not Registered</div>
+              <div>Attempting to register...</div>
+            </div>
+          `;
+          await registerSW();
+        }
+      } catch (error) {
+        swDiv.innerHTML = `
+          <h2>⚙️ Service Worker Check</h2>
+          <div class="status error">
+            <div class="status-title">❌ Service Worker Error</div>
+            <div>${error.message}</div>
+          </div>
+        `;
+      }
+    }
+
+    // Register Service Worker
+    async function registerSW() {
+      const swDiv = document.getElementById('sw-status');
+      
+      try {
+        const registration = await navigator.serviceWorker.register('./sw.js');
+        console.log('Service Worker registered:', registration);
+        
+        swDiv.innerHTML = `
+          <h2>⚙️ Service Worker Check</h2>
+          <div class="status success">
+            <div class="status-title">✅ Service Worker Registered Successfully</div>
+            <div><strong>Scope:</strong> <span class="code">${registration.scope}</span></div>
+            <div style="margin-top:10px">Wait a few seconds for it to activate, then try installing the app.</div>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Service Worker registration failed:', error);
+        swDiv.innerHTML = `
+          <h2>⚙️ Service Worker Check</h2>
+          <div class="status error">
+            <div class="status-title">❌ Service Worker Registration Failed</div>
+            <div>${error.message}</div>
+            <div style="margin-top:10px">
+              <strong>Common fixes:</strong>
+              <ul>
+                <li>Ensure sw.js is in the root directory</li>
+                <li>Check file permissions</li>
+                <li>Verify JavaScript syntax in sw.js</li>
+                <li>Ensure HTTPS is enabled</li>
+              </ul>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Check Icons
+    async function checkIcons() {
+      const iconsDiv = document.getElementById('icons-status');
+      iconsDiv.innerHTML = '<h2>🖼️ Icons Check</h2><div class="status">Checking icons...</div>';
+      
+      const iconSizes = [72, 96, 128, 144, 152, 192, 384, 512];
+      let results = [];
+      
+      for (const size of iconSizes) {
+        const url = `/icons/icon-${size}x${size}.png`;
+        try {
+          const response = await fetch(url, { method: 'HEAD' });
+          results.push({
+            size,
+            status: response.ok,
+            url
+          });
+        } catch (error) {
+          results.push({
+            size,
+            status: false,
+            url,
+            error: error.message
+          });
+        }
+      }
+      
+      const allSuccess = results.every(r => r.status);
+      const successCount = results.filter(r => r.status).length;
+      
+      let html = `
+        <h2>🖼️ Icons Check</h2>
+        <div class="status ${allSuccess ? 'success' : 'warning'}">
+          <div class="status-title">${successCount}/${results.length} Icons Found</div>
+          <ul>
+      `;
+      
+      results.forEach(r => {
+        html += `<li>${r.status ? '✅' : '❌'} ${r.size}x${r.size}</li>`;
+      });
+      
+      html += `
+          </ul>
+        </div>
+      `;
+      
+      if (!allSuccess) {
+        html += `
+          <div class="status warning">
+            <div class="status-title">⚠️ Missing Icons</div>
+            <div>Ensure the /icons/ folder is uploaded to your web server with all 8 icon files.</div>
+          </div>
+        `;
+      }
+      
+      iconsDiv.innerHTML = html;
+    }
+
+    // Run all checks on load
+    window.addEventListener('load', () => {
+      checkHTTPS();
+      checkManifest();
+      checkSW();
+      checkIcons();
+    });
+  </script>
+</body>
+</html>
+
+

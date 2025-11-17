@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Workout - Viltrum Fitness</title>
+  <link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-title" content="Viltrum Fitness" />
+  <link rel="apple-touch-icon" href="./icons/icon-192x192.png" />
+  
+  <style>
+    /* Header grid layout for button positioning */
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 15px;
+    }
+
+    header img {
+      grid-column: 2;
+      justify-self: center;
+    }
+
+    /* Hide header during workout */
+    body.workout-active header {
+      display: none !important;
+    }
+
+    /* DASHBOARD BUTTON IN HEADER */
+    .header-dashboard-btn {
+      grid-column: 3;
+      justify-self: end;
+      position: relative;
+      padding: 10px 20px;
+      background: #FFFFFF;
+      border: 2px solid #FFFFFF;
+      border-radius: 10px;
+      color: #000000;
+      font-family: 'Staatliches', sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+      z-index: 100;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .header-dashboard-btn:hover {
+      background: #B0B0B0;
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+    }
+
+    .header-dashboard-btn svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .header-dashboard-btn {
+        padding: 8px 14px;
+        font-size: 14px;
+        gap: 6px;
+      }
+
+      .header-dashboard-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://drive.google.com/thumbnail?id=1va6OkGp9yAHDJBfeDM3npwqlJJoLUh5C" alt="Logo" />
+    <audio controls src="https://drive.google.com/uc?export=download&id=1L8OmsZjgrVvHR0vyfSDhaueR1rweGtH7"></audio>
+    
+    <!-- DASHBOARD BUTTON -->
+    <a href="dashboard.html" class="header-dashboard-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>Dashboard</span>
+    </a>
+  </header>
+
+  <main>
+    <!-- MAIN APP - NO LOGIN SECTION HERE -->
+    <div id="main-app">
+      <!-- TOP SELECTOR ABOVE THE SETUP CARD -->
+      <div id="topbar-select">
+        <label for="workoutSelect">Seleziona workout:</label>
+        <select id="workoutSelect"></select>
+      </div>
+
+      <div id="setup-screen">
+        <!-- INSTRUCTIONS SECTION (Collapsible) -->
+        <div id="instructions-section" style="display: none;">
+          <div class="instructions-header" id="instructions-header">
+            <span class="instructions-icon"></span>
+            <span class="instructions-title">ISTRUZIONI</span>
+            <span class="collapse-icon" id="instructions-collapse-icon">▼</span>
+          </div>
+          <div id="instructions-content" class="instructions-content">
+            <div id="instructions-box">
+              <p id="instructions-text"></p>
+              <img id="instructions-image" style="display: none;" />
+            </div>
+          </div>
+        </div>
+
+        <!-- MATERIALE SECTION -->
+        <div id="materiale-section" style="display: none;">
+          <div class="materiale-header">
+            <span class="materiale-icon"></span>
+            <span class="materiale-title">MATERIALE</span>
+          </div>
+          <div id="materiale-content" class="materiale-content">
+            <div id="materiale-list"></div>
+          </div>
+        </div>
+
+        <h3 id="workout-preview-title" style="display: none; text-align: center; color: #fff; margin: 30px 0 20px; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;">Anteprima workout</h3>
+
+        <div id="exercise-visuals" style="display: none; margin-top: 20px;">
+          <div id="exercise-grid" style="display: grid; grid-template-columns: 1fr; gap: 20px;"></div>
+        </div>
+
+        <!-- START POINT SELECTOR -->
+        <div id="start-point-selector" style="display: none; margin: 30px 0; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 2px solid rgba(176,176,176,0.3);">
+          <h3 style="color: #B0B0B0; margin-bottom: 15px; text-align: center; font-size: 16px;"> Inizia da un blocco specifico</h3>
+          
+          <div style="display: grid; gap: 15px;">
+            <div>
+              <label for="start-phase-select" style="display: block; color: #fff; margin-bottom: 5px; font-size: 14px;">Blocco:</label>
+              <select id="start-phase-select" style="width: 100%; padding: 10px; border-radius: 8px; background: #4D4D4D; color: #fff; border: 1px solid #7D7D7D;">
+                <option value="0">Inizio workout (con riscaldamento)</option>
+              </select>
+            </div>
+
+            <div id="start-round-container" style="display: none;">
+              <label for="start-round-select" style="display: block; color: #fff; margin-bottom: 5px; font-size: 14px;">Round:</label>
+              <select id="start-round-select" style="width: 100%; padding: 10px; border-radius: 8px; background: #4D4D4D; color: #fff; border: 1px solid #7D7D7D;">
+              </select>
+            </div>
+
+            <div id="start-exercise-container" style="display: none;">
+              <label for="start-exercise-select" style="display: block; color: #fff; margin-bottom: 5px; font-size: 14px;">Esercizio:</label>
+              <select id="start-exercise-select" style="width: 100%; padding: 10px; border-radius: 8px; background: #4D4D4D; color: #fff; border: 1px solid #7D7D7D;">
+              </select>
+            </div>
+
+            <button id="reset-start-point" style="padding: 8px 15px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid #7D7D7D; border-radius: 8px; cursor: pointer; font-size: 13px;">
+              ⟲ Reset a inizio workout
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETUP SETTINGS POPUP -->
+      <div id="setup-settings-popup" style="display: none;">
+        <div class="settings-content">
+          <h3>Impostazioni</h3>
+          
+          <label for="soundMode-setup">Modalità audio:</label>
+          <select id="soundMode-setup">
+            <option value="synth">Synth (Device)</option>
+            <option value="voice">Voice</option>
+            <option value="bip">Beep</option>
+            <option value="none">Nessun suono</option>
+          </select>
+          
+          <!-- NEW: Warm-up toggle -->
+          <div style="margin-top: 20px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" id="warmup-toggle" checked style="margin-right: 10px; width: 20px; height: 20px; cursor: pointer;">
+              <span>Abilita Riscaldamento</span>
+            </label>
+          </div>
+          
+          <button id="close-setup-settings">Chiudi</button>
+        </div>
+      </div>
+
+
+
+      <!-- SESSIONE ALLENAMENTO -->
+      <div id="exercise-container" style="display: none; flex-direction: column;">
+        <!-- 0. PROGRESS BAR + FAB (PRIMA RIGA) -->
+        <div id="workout-progress-header">
+          <div id="workout-progress-container">
+            <div id="progress-bar-wrapper">
+              <div id="progress-bar">
+                <div id="progress-fill"></div>
+                <div id="progress-percentage">0%</div>
+              </div>
+            </div>
+            <div id="progress-info">
+              <span id="progress-block">Block 1/3</span>
+              <span id="progress-round">Round 1/4</span>
+              <span id="progress-exercise">Exercise 1/5</span>
+            </div>
+          </div>
+          
+          <!-- FAB BUTTON -->
+          <button id="fab-menu-toggle" class="fab-button" title="Menu controlli">☰</button>
+        </div>
+
+        <!-- CONTROLLI (SECONDA RIGA - NASCOSTA DI DEFAULT) -->
+        <div id="controls-container" class="controls-hidden">
+          <button id="prev-exercise-button" class="nav-btn" title="Esercizio precedente">◀</button>
+          <button id="pause-button">⏸ Pausa</button>
+          <button id="next-exercise-button" class="nav-btn" title="Esercizio successivo">▶</button>
+          <button id="settings-button" class="settings-btn" title="Impostazioni">⚙</button>
+        </div>
+
+        <!-- OVERLAY per chiudere menu -->
+        <div id="controls-overlay" class="controls-overlay-hidden"></div>
+        
+        <!-- 1. TIMER -->
+        <div id="timer" class="full-timer"></div>
+      
+        <!-- 2. NOME ATTUALE -->
+        <div id="exercise-name"></div>
+      
+        <!-- 3. GIF ATTUALE -->
+        <div id="exercise-gif-viewport">
+          <img id="exercise-gif" src="" alt="Esercizio corrente" />
+        </div>
+
+      </div>
+
+        <!-- Settings Popup Overlay -->
+        <div id="settings-popup" style="display: none;">
+          <div class="settings-content">
+            <h3>Impostazioni</h3>
+            <label for="soundMode">Modalità audio:</label>
+            <select id="soundMode">
+              <option value="voice">Voice</option>
+              <option value="synth">Synth (Device)</option>
+              <option value="bip">Beep</option>
+              <option value="none">Nessun suono</option>
+            </select>
+            <button id="exit-workout-button" style="background: #e74c3c; margin-top: 15px;">🛑 Termina Allenamento</button>
+            <button id="close-settings">Chiudi</button>
+          </div>
+        </div>
+
+
+
+        <!-- FIX per JS -->
+        <div id="next-exercise-preview" style="display: none;"></div>
+      </div>
+
+    </div>
+  </main>
+    <!-- STICKY BUTTONS AT BOTTOM -->
+  <div id="bottom-buttons-container">
+    <button id="setup-settings-button" class="settings-btn" title="Impostazioni">⚙️</button>
+
+    <button id="start-button-bottom" class="start-button" disabled>Start Workout</button>
+  </div>
+
+  <!-- AUDIO -->
+  <audio id="beep-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+  <audio id="transition-sound" src="https://actions.google.com/sounds/v1/emergency/emergency_siren_short_burst.ogg" preload="auto"></audio>
+
+  <!-- JS -->
+  <script src="script.js"></script>
+  <script>
+    // AUTH CHECK - Use localStorage which is set by login
+    if (!localStorage.getItem('loggedUser')) {
+      window.location.href = 'index.html';
+    }
+  </script>
+  <script src="viewport.js"></script>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((registration) => {
+            console.log('Service Worker registered successfully:', registration.scope);
+          })
+          .catch((error) => {
+            console.log('Service Worker registration failed:', error);
+          });
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,471 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                    MANUAL PAYMENT WORKFLOW                                ║
+║          Authentication + Trials + Manual Subscription Management         ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+Perfect for: Starting out, testing, keeping full control
+
+───────────────────────────────────────────────────────────────────────────
+✅ FILES YOU NEED (7 TOTAL)
+───────────────────────────────────────────────────────────────────────────
+
+Frontend (Add to your project):
+1. ✅ auth.js
+2. ✅ index-with-signup.html
+3. ✅ access-control.js
+4. ✅ access-control-styles.css
+5. ✅ script-integration.js
+
+Backend (Google Apps Script):
+6. ✅ google-apps-script-with-trials.gs
+
+Documentation:
+7. ✅ QUICK-START-GUIDE.txt (for basic setup)
+
+───────────────────────────────────────────────────────────────────────────
+🚀 SETUP (1 HOUR TOTAL)
+───────────────────────────────────────────────────────────────────────────
+
+STEP 1: Basic Authentication (20 min)
+Follow QUICK-START-GUIDE.txt:
+- Create Supabase account
+- Add auth.js with credentials
+- Replace index.html with index-with-signup.html
+- Test signup/login
+
+STEP 2: Add Automatic Trials (20 min)
+- Deploy google-apps-script-with-trials.gs
+- Customize trial workouts (lines 130-133)
+- Setup Supabase webhook
+- New users automatically get 7-day trial!
+
+STEP 3: Add Access Control (20 min)
+- Add access-control.js to your project
+- Add access-control-styles.css
+- Update dashboard.html HTML structure
+- Users see trial/expired/active states
+
+───────────────────────────────────────────────────────────────────────────
+🎨 CUSTOMIZE FOR MANUAL PAYMENTS
+───────────────────────────────────────────────────────────────────────────
+
+Since you're handling payments manually, you need to customize the
+"Subscribe" buttons to collect payment info YOUR way.
+
+OPTION A: Remove Payment Buttons (Simplest)
+────────────────────────────────────────────
+
+In access-control.js, find the showSubscriptionPlans() function (line 303)
+and replace with:
+
+```javascript
+function showSubscriptionPlans() {
+  const modal = document.createElement('div');
+  modal.className = 'subscription-modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <button class="close-modal" onclick="this.parentElement.parentElement.remove()">×</button>
+      <h2>Upgrade Your Subscription</h2>
+      
+      <div class="pricing-plans">
+        <div class="plan-card">
+          <h3>Monthly</h3>
+          <div class="price">€29<span>/month</span></div>
+          <ul class="plan-features">
+            <li>✅ All workout programs</li>
+            <li>✅ Nutrition guidance</li>
+            <li>✅ Progress tracking</li>
+            <li>✅ Cancel anytime</li>
+          </ul>
+        </div>
+        
+        <div class="plan-card featured">
+          <div class="popular-badge">Most Popular</div>
+          <h3>Quarterly</h3>
+          <div class="price">€69<span>/3 months</span></div>
+          <div class="savings">Save €18!</div>
+          <ul class="plan-features">
+            <li>✅ All workout programs</li>
+            <li>✅ Nutrition guidance</li>
+            <li>✅ Progress tracking</li>
+            <li>✅ Priority support</li>
+          </ul>
+        </div>
+        
+        <div class="plan-card">
+          <h3>Annual</h3>
+          <div class="price">€249<span>/year</span></div>
+          <div class="savings">Save €99!</div>
+          <ul class="plan-features">
+            <li>✅ All workout programs</li>
+            <li>✅ Nutrition guidance</li>
+            <li>✅ Progress tracking</li>
+            <li>✅ 1-on-1 coaching session</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="payment-instructions">
+        <h3>💳 How to Subscribe</h3>
+        <p><strong>1. Contact me:</strong> Send email to your-email@example.com</p>
+        <p><strong>2. Choose your plan</strong> (Monthly/Quarterly/Annual)</p>
+        <p><strong>3. Payment options:</strong></p>
+        <ul style="text-align: left; display: inline-block;">
+          <li>Bank transfer</li>
+          <li>PayPal</li>
+          <li>Bizum</li>
+        </ul>
+        <p><strong>4. Get instant access</strong> after payment confirmation</p>
+        
+        <button onclick="contactForPayment()" class="cta-button large">
+          Contact to Subscribe
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+}
+
+function contactForPayment() {
+  const user = getCurrentUser();
+  const subject = encodeURIComponent('Viltrum Fitness Subscription');
+  const body = encodeURIComponent(`Hi!\n\nI'd like to subscribe to Viltrum Fitness.\n\nMy email: ${user?.email || '[your email]'}\n\nPlease send me payment details.\n\nThanks!`);
+  
+  window.location.href = `mailto:your-email@example.com?subject=${subject}&body=${body}`;
+}
+```
+
+OPTION B: Link to Your Payment Method (WhatsApp/PayPal/Bank)
+─────────────────────────────────────────────────────────────
+
+Replace selectPlan() function (around line 393):
+
+```javascript
+function selectPlan(planType) {
+  const user = getCurrentUser();
+  
+  // CUSTOMIZE THESE LINKS:
+  const PAYMENT_OPTIONS = {
+    monthly: {
+      whatsapp: 'https://wa.me/34612345678?text=Hi%20I%20want%20monthly%20plan',
+      paypal: 'your-paypal-link',
+      bank: 'ES12 1234 1234 1234 1234'
+    },
+    quarterly: {
+      whatsapp: 'https://wa.me/34612345678?text=Hi%20I%20want%20quarterly%20plan',
+      paypal: 'your-paypal-link',
+      bank: 'ES12 1234 1234 1234 1234'
+    },
+    annual: {
+      whatsapp: 'https://wa.me/34612345678?text=Hi%20I%20want%20annual%20plan',
+      paypal: 'your-paypal-link',
+      bank: 'ES12 1234 1234 1234 1234'
+    }
+  };
+  
+  // Show payment options modal
+  alert(`Payment Options for ${planType} plan:\n\n1. WhatsApp me\n2. PayPal\n3. Bank transfer\n\nChoose your preferred method`);
+  
+  // Open WhatsApp (or change to PayPal link, email, etc.)
+  window.open(PAYMENT_OPTIONS[planType].whatsapp, '_blank');
+}
+```
+
+OPTION C: Email You Directly
+─────────────────────────────
+
+Simplest option - just email you:
+
+```javascript
+function selectPlan(planType) {
+  const user = getCurrentUser();
+  
+  const plans = {
+    monthly: '€29/month',
+    quarterly: '€69/3 months',
+    annual: '€249/year'
+  };
+  
+  const subject = encodeURIComponent(`Subscription Request - ${planType}`);
+  const body = encodeURIComponent(
+    `Hi,\n\n` +
+    `I'd like to subscribe to the ${planType} plan (${plans[planType]}).\n\n` +
+    `My account email: ${user?.email}\n\n` +
+    `Please send me payment details.\n\n` +
+    `Thanks!`
+  );
+  
+  // Replace with YOUR email
+  window.location.href = `mailto:your-email@example.com?subject=${subject}&body=${body}`;
+}
+```
+
+───────────────────────────────────────────────────────────────────────────
+💰 YOUR PAYMENT WORKFLOW
+───────────────────────────────────────────────────────────────────────────
+
+When someone wants to subscribe:
+
+1. They see trial ending → Click "Subscribe"
+2. Contact you via:
+   - Email
+   - WhatsApp  
+   - Phone call
+   - Message on website
+
+3. YOU collect payment via:
+   - Bank transfer
+   - PayPal
+   - Bizum
+   - Cash (if in-person training)
+   - Whatever you prefer!
+
+4. After payment received:
+   - Open Google Sheets
+   - Find their email
+   - Update "scadenza" column:
+     * Monthly: +30 days
+     * Quarterly: +90 days  
+     * Annual: +365 days
+   - Add more workout columns if needed
+
+5. User refreshes page → Full access instantly! ✅
+
+───────────────────────────────────────────────────────────────────────────
+📊 GOOGLE SHEETS MANAGEMENT
+───────────────────────────────────────────────────────────────────────────
+
+Your daily workflow in Google Sheets:
+
+Check Column B (scadenza) Daily:
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Color-code for easy viewing:                                            │
+│                                                                         │
+│ 🟢 GREEN (Future date > 7 days)    → Active paid user                  │
+│ 🟡 YELLOW (Within 7 days)          → Trial or expiring soon            │
+│ 🔴 RED (Past date)                 → Expired, needs renewal             │
+└─────────────────────────────────────────────────────────────────────────┘
+
+Example:
+| Email              | scadenza   | Status      | Action                    |
+|--------------------|------------|-------------|---------------------------|
+| john@email.com     | 2026-01-15 | 🟢 Active   | None needed               |
+| trial@email.com    | 2025-11-16 | 🟡 Trial    | Wait for conversion       |
+| expired@email.com  | 2024-10-01 | 🔴 Expired  | Contact for renewal       |
+
+When Payment Received:
+1. Find user's row
+2. Click scadenza cell (Column B)
+3. Update date:
+   - Monthly: =TODAY()+30
+   - Quarterly: =TODAY()+90
+   - Annual: =TODAY()+365
+4. Done! Access granted automatically
+
+───────────────────────────────────────────────────────────────────────────
+🔔 GET NOTIFIED OF EXPIRING USERS
+───────────────────────────────────────────────────────────────────────────
+
+Create a separate sheet "Expiring Soon" with formula:
+
+In cell A1:
+=FILTER(Users!A:C, Users!B:B<=TODAY()+7, Users!B:B>=TODAY())
+
+This shows users expiring in next 7 days!
+
+Or run this in Google Apps Script (Tools → Script Editor):
+
+```javascript
+function emailExpiringUsers() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const userSheet = ss.getSheetByName("Users");
+  const data = userSheet.getDataRange().getValues();
+  
+  const today = new Date();
+  const sevenDaysFromNow = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
+  
+  let expiring = [];
+  
+  for (let i = 1; i < data.length; i++) {
+    const email = data[i][0];
+    const scadenza = new Date(data[i][1]);
+    
+    if (scadenza >= today && scadenza <= sevenDaysFromNow) {
+      expiring.push({
+        email: email,
+        expires: scadenza.toLocaleDateString(),
+        daysLeft: Math.ceil((scadenza - today) / (1000 * 60 * 60 * 24))
+      });
+    }
+  }
+  
+  if (expiring.length > 0) {
+    const message = "Users expiring soon:\n\n" + 
+      expiring.map(u => `${u.email} - ${u.daysLeft} days left`).join('\n');
+    
+    MailApp.sendEmail({
+      to: "your-email@example.com",
+      subject: "⚠️ Viltrum Fitness - Expiring Subscriptions",
+      body: message
+    });
+  }
+}
+```
+
+Set this to run daily (Triggers → Add trigger → Time-driven → Day timer)
+
+───────────────────────────────────────────────────────────────────────────
+💡 PRICING STRATEGIES (Manual Payment)
+───────────────────────────────────────────────────────────────────────────
+
+Since you control everything, you can offer:
+
+Standard Prices:
+- Monthly: €29
+- Quarterly: €69 (€23/month - save €6/month)
+- Annual: €249 (€20.75/month - save €8.25/month)
+
+Special Offers (YOU decide when):
+- First month: €19 (intro offer)
+- Bring a friend: 1 month free
+- Annual upfront: €199 (instead of €249)
+- Loyalty discount: -20% after 6 months
+- Student/senior: -30%
+
+Payment Flexibility:
+- Let them pay monthly via bank transfer
+- Accept cash if in-person
+- Split payments (quarterly in 3 installments)
+- Gift subscriptions
+
+───────────────────────────────────────────────────────────────────────────
+📧 EMAIL TEMPLATES FOR MANUAL PAYMENTS
+───────────────────────────────────────────────────────────────────────────
+
+Trial Ending Reminder (Day 6):
+Subject: Your Viltrum Fitness trial ends tomorrow! 🏋️
+
+Hi [Name],
+
+Your 7-day trial ends tomorrow! Hope you've enjoyed [Trial Workout Name].
+
+Ready to continue? Here are your options:
+
+💪 Monthly: €29/month - Cancel anytime
+🔥 Quarterly: €69 (save €18!) - Best value
+⭐ Annual: €249 (save €99!) - Includes 1-on-1 session
+
+To subscribe:
+1. Reply to this email with your choice
+2. I'll send payment details
+3. Get instant full access!
+
+Questions? Just reply!
+
+[Your name]
+
+
+Payment Received Confirmation:
+Subject: Welcome to Viltrum Fitness! 🎉
+
+Hi [Name],
+
+Payment received! Your subscription is now active.
+
+✅ Full access to all workouts
+✅ Nutrition guidance
+✅ Progress tracking
+✅ Access until: [Date]
+
+Login at: [your-website.com]
+
+Let's get started! 💪
+
+[Your name]
+
+
+Renewal Reminder (7 days before):
+Subject: Your subscription renews in 7 days
+
+Hi [Name],
+
+Just a heads up - your Viltrum Fitness subscription renews on [Date].
+
+Your plan: [Monthly/Quarterly/Annual]
+Amount: €[XX]
+
+To renew:
+- Same payment method as last time
+- OR reply to update payment details
+
+Questions? Let me know!
+
+[Your name]
+
+───────────────────────────────────────────────────────────────────────────
+🎯 QUICK REFERENCE CARD
+───────────────────────────────────────────────────────────────────────────
+
+User Signs Up:
+→ Automatic trial (7 days)
+→ Wait for them to contact you
+
+User Contacts You:
+→ Collect payment (your way)
+→ Confirm amount received
+
+Update Scadenza:
+→ Open Google Sheets
+→ Find their email
+→ Column B: Add 30/90/365 days
+→ Save
+
+User Gets Access:
+→ Automatically (they refresh page)
+→ No code changes needed!
+
+───────────────────────────────────────────────────────────────────────────
+✅ WHY THIS APPROACH IS PERFECT FOR YOU
+───────────────────────────────────────────────────────────────────────────
+
+✅ No Stripe fees (2.9% saved!)
+✅ No technical complexity
+✅ Full control over pricing
+✅ Flexible payment methods
+✅ Can negotiate/discount
+✅ Personal touch with clients
+✅ Easy to understand
+✅ Can upgrade to automatic later
+
+───────────────────────────────────────────────────────────────────────────
+🚀 WHEN TO UPGRADE TO AUTOMATIC PAYMENTS
+───────────────────────────────────────────────────────────────────────────
+
+Keep manual payment UNTIL:
+- You have 50+ active subscribers
+- Manual management becomes time-consuming
+- You want passive income
+- You want automatic renewals
+
+Then: Add Stripe using PAYMENT-INTEGRATION-GUIDE.txt
+All your code already supports it! Just add the payment integration.
+
+───────────────────────────────────────────────────────────────────────────
+📝 SUMMARY
+───────────────────────────────────────────────────────────────────────────
+
+AUTOMATIC:
+✅ User signup
+✅ Trial assignment (7 days)
+✅ Access control (trial/expired/active)
+✅ UI changes based on scadenza
+
+MANUAL:
+📝 Payment collection (your way)
+📝 Scadenza updates (Google Sheets)
+📝 Customer communication (email/WhatsApp)
+
+RESULT: Perfect balance of automation + personal control! 🎉
+
+═══════════════════════════════════════════════════════════════════════════

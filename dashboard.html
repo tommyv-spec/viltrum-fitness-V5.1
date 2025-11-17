@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Dashboard - Viltrum Fitness</title>
+  <link href="https://fonts.googleapis.com/css2?family=Staatliches&display=swap" rel="stylesheet" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-title" content="Viltrum Fitness" />
+  <link rel="apple-touch-icon" href="./icons/icon-192x192.png" />
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100vh;
+      height: var(--dvh-px, 100vh);
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      font-family: 'Staatliches', sans-serif;
+      background: #000000;
+      color: #FFFFFF;
+      overflow: hidden;
+    }
+
+    /* Dashboard container */
+    .dashboard-container {
+      height: 100vh;
+      height: var(--dvh-px, 100vh);
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    /* Header - Same as workout.html and nutrition.html */
+    header {
+      flex-shrink: 0;
+      display: grid !important;
+      grid-template-columns: 1fr auto 1fr !important;
+      align-items: center !important;
+      gap: 15px !important;
+      padding: 15px 20px;
+      background: rgba(0, 0, 0, 0.98);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    header img {
+      grid-column: 2 !important;
+      justify-self: center !important;
+      height: auto;
+      max-width: 180px;
+      width: auto;
+    }
+
+    .header-profile-btn {
+      grid-column: 3 !important;
+      justify-self: end !important;
+      position: relative !important;
+      padding: 10px 20px;
+      background: #FFFFFF;
+      border: 2px solid #FFFFFF;
+      border-radius: 10px;
+      color: #000000;
+      font-family: 'Staatliches', sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+      white-space: nowrap;
+    }
+
+    .header-profile-btn:hover {
+      background: #B0B0B0;
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+    }
+
+    .header-profile-btn svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        padding: 12px 15px;
+      }
+
+      header img {
+        max-width: 140px;
+      }
+
+      .header-profile-btn {
+        padding: 8px 16px;
+        font-size: 14px;
+      }
+
+      .header-profile-btn svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    /* Welcome section */
+    .welcome-section {
+      flex-shrink: 0;
+      text-align: center;
+      padding: 12px 20px 8px;
+    }
+
+    .welcome-section h1 {
+      color: #FFFFFF;
+      font-size: clamp(18px, 3.5vw, 24px);
+      letter-spacing: 1.5px;
+      margin: 0;
+    }
+
+    /* Main content */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 8px 20px 15px;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* 3-card vertical layout */
+    .app-sections-grid {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    /* Card styling - Optimized for vertical layout */
+    .section-card {
+      flex: 1;
+      background: linear-gradient(135deg, rgba(77, 77, 77, 0.8), rgba(77, 77, 77, 0.4));
+      border: 2px solid #7D7D7D;
+      border-radius: 20px;
+      padding: 20px 18px;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      min-height: 0;
+    }
+
+    .section-card:hover {
+      transform: translateY(-4px);
+      border-color: #FFFFFF;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+    }
+
+    .section-card.disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .section-card.disabled:hover {
+      transform: none;
+      border-color: #7D7D7D;
+      box-shadow: none;
+    }
+
+    /* Card header */
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .card-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      flex-shrink: 0;
+    }
+
+    .section-card:hover .card-icon {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.05);
+    }
+
+    .card-icon svg {
+      width: 32px;
+      height: 32px;
+      color: #FFFFFF;
+    }
+
+    /* Status badge */
+    .status-badge {
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: clamp(10px, 2vw, 12px);
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .status-badge.active {
+      background: rgba(76, 175, 80, 0.25);
+      color: #4CAF50;
+      border: 1px solid rgba(76, 175, 80, 0.5);
+    }
+
+    .status-badge.coming-soon {
+      background: rgba(158, 158, 158, 0.25);
+      color: #9E9E9E;
+      border: 1px solid rgba(158, 158, 158, 0.5);
+    }
+
+    .status-badge.in-dev {
+      background: rgba(255, 193, 7, 0.25);
+      color: #FFC107;
+      border: 1px solid rgba(255, 193, 7, 0.5);
+    }
+
+    /* Card content */
+    .card-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .card-content h2 {
+      color: #FFFFFF;
+      font-size: clamp(20px, 4vw, 28px);
+      margin: 0;
+      letter-spacing: 1.5px;
+      line-height: 1.2;
+    }
+
+    .card-content p {
+      color: #B0B0B0;
+      font-size: clamp(12px, 2.3vw, 15px);
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 480px) {
+      .welcome-section {
+        padding: 10px 15px 6px;
+      }
+
+      main {
+        padding: 6px 15px 12px;
+      }
+
+      .app-sections-grid {
+        gap: 14px;
+      }
+
+      .section-card {
+        padding: 18px 16px;
+      }
+
+      .card-icon {
+        width: 52px;
+        height: 52px;
+      }
+
+      .card-icon svg {
+        width: 30px;
+        height: 30px;
+      }
+    }
+
+    /* Landscape mobile */
+    @media (max-width: 900px) and (max-height: 500px) {
+      header {
+        padding: 8px 15px;
+      }
+
+      header img {
+        max-width: 120px;
+      }
+
+      .header-profile-btn {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+
+      .welcome-section {
+        padding: 6px 15px 4px;
+      }
+
+      .welcome-section h1 {
+        font-size: 16px;
+      }
+
+      main {
+        padding: 6px 15px 10px;
+      }
+
+      .app-sections-grid {
+        gap: 10px;
+      }
+
+      .section-card {
+        padding: 14px 16px;
+      }
+
+      .card-icon {
+        width: 48px;
+        height: 48px;
+      }
+
+      .card-icon svg {
+        width: 28px;
+        height: 28px;
+      }
+
+      .card-content h2 {
+        font-size: 18px;
+      }
+
+      .card-content p {
+        font-size: 11px;
+      }
+    }
+
+    /* Modal styling */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      height: var(--dvh-px, 100vh);
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: linear-gradient(135deg, #2D2D2D, #1A1A1A);
+      border: 2px solid #7D7D7D;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 90vh;
+      max-height: calc(var(--dvh-px, 100vh) * 0.9);
+      overflow-y: auto;
+    }
+
+    .modal-content h3 {
+      color: #FFFFFF;
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    /* Subscription status in modal */
+    .subscription-status {
+      margin-bottom: 20px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      border: 1px solid;
+    }
+
+    .subscription-status.trial {
+      background: rgba(255, 193, 7, 0.15);
+      border-color: rgba(255, 193, 7, 0.4);
+      color: #FFC107;
+    }
+
+    .subscription-status.active {
+      background: rgba(76, 175, 80, 0.15);
+      border-color: rgba(76, 175, 80, 0.4);
+      color: #4CAF50;
+    }
+
+    .subscription-status.expired {
+      background: rgba(244, 67, 54, 0.15);
+      border-color: rgba(244, 67, 54, 0.4);
+      color: #F44336;
+    }
+
+    /* Expiration date info */
+    #expiration-info {
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #expiration-date {
+      color: #FFFFFF;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .modal-content input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      color: #FFFFFF;
+      font-family: 'Staatliches', sans-serif;
+      font-size: 16px;
+    }
+
+    .modal-content button {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #FFFFFF;
+      color: #000000;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Staatliches', sans-serif;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .modal-content button:hover {
+      background: #B0B0B0;
+      transform: scale(1.02);
+    }
+
+    .modal-content button.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .modal-content .message {
+      text-align: center;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .modal-content .message.success {
+      background: rgba(76, 175, 80, 0.2);
+      color: #4CAF50;
+    }
+
+    .modal-content .message.error {
+      background: rgba(244, 67, 54, 0.2);
+      color: #F44336;
+    }
+
+    /* Profile actions */
+    .profile-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .profile-btn {
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      font-family: 'Staatliches', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .profile-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.02);
+    }
+
+    .profile-btn.logout {
+      background: rgba(244, 67, 54, 0.2);
+      border-color: rgba(244, 67, 54, 0.5);
+      color: #F44336;
+    }
+
+    .profile-btn.logout:hover {
+      background: rgba(244, 67, 54, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Header with Profile Button -->
+    <header>
+      <img src="https://drive.google.com/thumbnail?id=1va6OkGp9yAHDJBfeDM3npwqlJJoLUh5C" alt="Viltrum Fitness" />
+      <button class="header-profile-btn" onclick="openProfileModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <circle cx="12" cy="10" r="3"/>
+          <path d="M7 20.662V19a2 2 0 012-2h6a2 2 0 012 2v1.662"/>
+        </svg>
+        PROFILE
+      </button>
+    </header>
+
+    <!-- Welcome -->
+    <div class="welcome-section">
+      <h1 id="welcome-text">BENVENUTO!</h1>
+    </div>
+
+    <!-- Main Content -->
+    <main>
+      <!-- 3-Card Vertical Grid -->
+      <div class="app-sections-grid">
+        
+        <!-- More Muscle -->
+        <a href="workout.html" class="section-card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6.5 6.5l11 11M6.5 17.5l11-11M3 12h3m12 0h3M12 3v3m0 12v3"/>
+              </svg>
+            </div>
+            <span class="status-badge active">Attivo</span>
+          </div>
+          <div class="card-content">
+            <h2>MORE MUSCLE</h2>
+            <p>Allenamento personalizzato con timer e progressi</p>
+          </div>
+        </a>
+
+        <!-- Nutrition -->
+        <a href="nutrition.html" class="section-card">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v20M12 2a9 9 0 019 9H3a9 9 0 019-9z"/>
+              </svg>
+            </div>
+            <span class="status-badge in-dev">In Sviluppo</span>
+          </div>
+          <div class="card-content">
+            <h2>NUTRITION</h2>
+            <p>Traccia pasti e monitora calorie</p>
+          </div>
+        </a>
+
+        <!-- Aerobic -->
+        <div class="section-card disabled" onclick="showComingSoon('Aerobic')">
+          <div class="card-header">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              </svg>
+            </div>
+            <span class="status-badge coming-soon">Coming Soon</span>
+          </div>
+          <div class="card-content">
+            <h2>AEROBIC</h2>
+            <p>Cardio training e resistenza</p>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Profile Modal -->
+  <div id="profile-modal" class="modal">
+    <div class="modal-content">
+      <h3>👤 PROFILO</h3>
+      
+      <!-- Subscription Status -->
+      <div id="subscription-status" class="subscription-status active">
+        <span id="subscription-text">✓ Abbonamento Attivo</span>
+      </div>
+      
+      <!-- Expiration Date -->
+      <div id="expiration-info" style="text-align: center; margin-bottom: 15px; color: #B0B0B0; font-size: 13px;">
+        Scadenza: <span id="expiration-date">Caricamento...</span>
+      </div>
+      
+      <div class="profile-actions">
+        <button class="profile-btn" onclick="openPasswordModal()">
+          🔒 Cambia Password
+        </button>
+        
+        <button class="profile-btn logout" onclick="handleLogout()">
+          🚪 Logout
+        </button>
+        
+        <button class="profile-btn secondary" onclick="closeProfileModal()">
+          ← Indietro
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password Change Modal -->
+  <div id="password-modal" class="modal">
+    <div class="modal-content">
+      <h3>🔒 CAMBIA PASSWORD</h3>
+      
+      <input type="password" id="new-password" placeholder="Nuova Password" minlength="6">
+      <input type="password" id="new-password-confirm" placeholder="Conferma Password" minlength="6">
+      
+      <button onclick="savePassword()">Salva Password</button>
+      <button class="secondary" onclick="closePasswordModal()">Annulla</button>
+      
+      <div class="message" id="password-message" style="display: none;"></div>
+    </div>
+  </div>
+
+  <!-- Load Session Cache Manager -->
+  <script src="session-cache.js"></script>
+  
+  <!-- Load Supabase and auth system -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth.js"></script>
+
+  <script>
+    // Auth check
+    const user = localStorage.getItem('loggedUser');
+    const userName = localStorage.getItem('userName') || 'User';
+
+    if (!user) {
+      window.location.href = 'index.html';
+    }
+
+    // Set welcome text
+    document.getElementById('welcome-text').textContent = `BENVENUTO, ${userName.toUpperCase()}!`;
+
+    // Load and display user session data (uses SessionCache)
+    async function initializeDashboard() {
+      try {
+        console.log('🏠 Initializing dashboard...');
+        
+        // Get user info from session cache (loads once, reuses cached data)
+        const userInfo = await SessionCache.getCurrentUserInfo();
+        
+        // Update subscription display
+        updateSubscriptionDisplay(userInfo);
+        
+        console.log('✅ Dashboard initialized');
+        
+      } catch (error) {
+        console.error('❌ Dashboard init failed:', error);
+        // Show error state in UI
+        const statusElement = document.getElementById('subscription-status');
+        if (statusElement) {
+          statusElement.className = 'subscription-status expired';
+          document.getElementById('subscription-text').textContent = '⚠️ Errore caricamento dati';
+        }
+      }
+    }
+    
+    // Update subscription display from user info
+    function updateSubscriptionDisplay(userInfo) {
+      if (!userInfo || !userInfo.scadenza) {
+        console.warn('No subscription data available');
+        return;
+      }
+      
+      const subStatus = SessionCache.getSubscriptionStatus(userInfo.scadenza);
+      
+      // Update expiration date
+      const expirationElement = document.getElementById('expiration-date');
+      if (expirationElement && subStatus.expirationDate) {
+        expirationElement.textContent = subStatus.expirationDate.toLocaleDateString('it-IT');
+      }
+      
+      // Update subscription status badge
+      const statusElement = document.getElementById('subscription-status');
+      const statusText = document.getElementById('subscription-text');
+      
+      if (!statusElement || !statusText) return;
+      
+      if (subStatus.isExpired) {
+        statusElement.className = 'subscription-status expired';
+        statusText.textContent = '❌ Abbonamento Scaduto';
+      } else if (subStatus.isTrial) {
+        statusElement.className = 'subscription-status trial';
+        statusText.textContent = `⏳ Trial - ${subStatus.daysRemaining} giorni rimasti`;
+      } else {
+        statusElement.className = 'subscription-status active';
+        statusText.textContent = '✓ Abbonamento Attivo';
+      }
+      
+      console.log(`📊 Subscription: ${subStatus.status}, ${subStatus.daysRemaining} days remaining`);
+    }
+    
+    // Initialize dashboard on load
+    initializeDashboard();
+
+    // Modal functions
+    function openProfileModal() {
+      document.getElementById('profile-modal').classList.add('active');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profile-modal').classList.remove('active');
+    }
+
+    function openPasswordModal() {
+      closeProfileModal();
+      document.getElementById('password-modal').classList.add('active');
+    }
+
+    function closePasswordModal() {
+      document.getElementById('password-modal').classList.remove('active');
+      document.getElementById('new-password').value = '';
+      document.getElementById('new-password-confirm').value = '';
+      document.getElementById('password-message').style.display = 'none';
+    }
+
+    async function savePassword() {
+      const newPassword = document.getElementById('new-password').value.trim();
+      const confirmPassword = document.getElementById('new-password-confirm').value.trim();
+      const message = document.getElementById('password-message');
+
+      if (!newPassword || !confirmPassword) {
+        message.textContent = 'Compila tutti i campi';
+        message.className = 'message error';
+        message.style.display = 'block';
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        message.textContent = 'Password deve essere di almeno 6 caratteri';
+        message.className = 'message error';
+        message.style.display = 'block';
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        message.textContent = 'Le password non corrispondono';
+        message.className = 'message error';
+        message.style.display = 'block';
+        return;
+      }
+
+      message.textContent = 'Aggiornamento...';
+      message.className = 'message';
+      message.style.display = 'block';
+
+      try {
+        const { error } = await supabase.auth.updateUser({
+          password: newPassword
+        });
+
+        if (error) {
+          message.textContent = error.message;
+          message.className = 'message error';
+        } else {
+          message.textContent = '✅ Password aggiornata!';
+          message.className = 'message success';
+          setTimeout(() => {
+            closePasswordModal();
+          }, 2000);
+        }
+      } catch (error) {
+        message.textContent = 'Errore durante aggiornamento';
+        message.className = 'message error';
+      }
+
+      message.style.display = 'block';
+    }
+
+    async function handleLogout() {
+      if (confirm('Sei sicuro di voler uscire?')) {
+        try {
+          await signOut();
+          window.location.href = 'index.html';
+        } catch (error) {
+          console.error('Logout error:', error);
+          alert('Errore durante logout');
+        }
+      }
+    }
+
+    function showComingSoon(feature) {
+      alert(`${feature} sarà disponibile presto! 🚀`);
+    }
+
+    // Close modals on outside click
+    document.getElementById('profile-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeProfileModal();
+    });
+
+    document.getElementById('password-modal').addEventListener('click', function(e) {
+      if (e.target === this) closePasswordModal();
+    });
+
+    // Enter key for password
+    document.getElementById('new-password-confirm').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') savePassword();
+    });
+  </script>
+
+  <!-- Workout preload -->
+  <script>
+    (async function preloadWorkouts() {
+      const user = localStorage.getItem('loggedUser');
+      if (!user) return;
+      
+      console.log('🚀 Pre-loading workouts...');
+      
+      const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIEsJrVqJuRRkwmdw6JkL9luPHJYv1fKhEcyl18uz71G1pRkoVoqPSrXrrWFaSVvAR/exec';
+      
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        localStorage.setItem('workoutData', JSON.stringify(data));
+        localStorage.setItem('workoutDataTimestamp', Date.now().toString());
+        
+        console.log('✅ Workouts preloaded');
+      } catch (error) {
+        console.warn('Error preloading workouts:', error);
+      }
+    })();
+  </script>
+  
+  <!-- Viewport.js -->
+  <script src="viewport.js"></script>
+  
+  <!-- Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((registration) => {
+            console.log('Service Worker registered:', registration.scope);
+          })
+          .catch((error) => {
+            console.log('Service Worker registration failed:', error);
+          });
+      });
+    }
+  </script>
+</body>
+</html>

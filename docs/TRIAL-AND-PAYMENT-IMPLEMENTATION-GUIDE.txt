@@ -1,0 +1,510 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║              COMPLETE IMPLEMENTATION GUIDE                                ║
+║       Trial System + Payment Integration + Access Control                 ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+This guide shows you how to implement a complete freemium fitness app with:
+✅ Free 7-day trials
+✅ Paid subscriptions (monthly/quarterly/annual)
+✅ Automatic access control based on "scadenza" column
+✅ Payment integration with Stripe
+
+───────────────────────────────────────────────────────────────────────────
+SYSTEM OVERVIEW
+───────────────────────────────────────────────────────────────────────────
+
+User Journey:
+1. Sign up → Gets Supabase account (free)
+2. Automatically added to Google Sheets with 7-day trial
+3. Can access LIMITED workouts during trial
+4. After 7 days → Prompted to subscribe
+5. Pays via Stripe → Gets full access
+6. Subscription auto-renews → scadenza extends automatically
+
+Access Levels:
+┌─────────────────┬──────────────┬─────────────────────────────────────┐
+│ Level           │ scadenza     │ Access                              │
+├─────────────────┼──────────────┼─────────────────────────────────────┤
+│ NO ACCESS       │ Not in sheet │ Landing page only, signup prompt    │
+│ TRIAL           │ < 7 days     │ Limited preview, 1 workout unlocked │
+│ EXPIRED         │ Past date    │ See workouts but locked, renew CTA  │
+│ ACTIVE (PAID)   │ Future date  │ Full access to all workouts         │
+└─────────────────┴──────────────┴─────────────────────────────────────┘
+
+───────────────────────────────────────────────────────────────────────────
+FILES YOU NEED
+───────────────────────────────────────────────────────────────────────────
+
+Core Authentication:
+✅ auth.js                              (Supabase authentication)
+✅ index-with-signup.html               (Login/signup page)
+
+Access Control System:
+✅ access-control.js                    (Trial/payment logic)
+✅ access-control-styles.css            (UI styles)
+
+Backend:
+✅ google-apps-script-with-trials.gs    (Auto-trial assignment)
+
+Payment (Optional):
+✅ PAYMENT-INTEGRATION-GUIDE.txt        (Stripe setup)
+
+Documentation:
+✅ QUICK-START-GUIDE.txt                (Basic auth setup)
+✅ This file                            (Complete system)
+
+───────────────────────────────────────────────────────────────────────────
+PHASE 1: BASIC AUTHENTICATION (Day 1 - Start Here)
+───────────────────────────────────────────────────────────────────────────
+
+Follow QUICK-START-GUIDE.txt to set up:
+1. Supabase account
+2. auth.js with credentials
+3. Login/signup interface
+4. Google Sheets with email column
+
+Result: Users can sign up and login (no payment yet)
+
+───────────────────────────────────────────────────────────────────────────
+PHASE 2: ADD ACCESS CONTROL (Day 2)
+───────────────────────────────────────────────────────────────────────────
+
+STEP 1: Add Files to Your Project
+
+Add to your HTML <head>:
+```html
+<head>
+  <!-- Existing head content -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth.js"></script>
+  <script src="access-control.js"></script>
+  <link rel="stylesheet" href="access-control-styles.css">
+</head>
+```
+
+STEP 2: Update dashboard.html
+
+Replace your workout list container:
+```html
+<body>
+  <div class="dashboard-container">
+    <h1>Your Workouts</h1>
+    
+    <!-- Access status banner (shows trial/paid/expired) -->
+    <div id="access-status"></div>
+    
+    <!-- Workout list (shows based on access level) -->
+    <div id="workout-list"></div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth.js"></script>
+  <script src="access-control.js"></script>
+  <script src="script.js"></script>
+</body>
+```
+
+STEP 3: Update Google Sheets Structure
+
+Your "Users" sheet should have:
+```
+Column A: utente (email)
+Column B: scadenza (date)
+Column C+: workout names
+```
+
+Example data:
+```
+| utente (email)     | scadenza   | workout 1    | workout 2    | workout 3 |
+|--------------------|------------|--------------|--------------|-----------|
+| trial@email.com    | 2025-11-16 | Trial Wkt 1  |              |           |
+| paid@email.com     | 2026-11-09 | Full Body    | Upper Body   | Core      |
+| expired@email.com  | 2024-01-01 | Old Workout  |              |           |
+```
+
+STEP 4: Test Access Control
+
+Test with different dates in scadenza:
+- Future date (2026-11-09) → ACTIVE (full access)
+- Within 7 days (2025-11-16) → TRIAL (limited access)
+- Past date (2024-01-01) → EXPIRED (locked, payment prompt)
+- Not in sheet → NO ACCESS (signup prompt)
+
+───────────────────────────────────────────────────────────────────────────
+PHASE 3: ADD AUTOMATIC TRIAL ASSIGNMENT (Day 3)
+───────────────────────────────────────────────────────────────────────────
+
+STEP 1: Update Google Apps Script
+
+Replace your Code.gs with: google-apps-script-with-trials.gs
+
+CUSTOMIZE TRIAL WORKOUTS (Lines 130-133):
+```javascript
+const trialWorkouts = [
+  "Beginner Introduction",  // Your trial workout name
+  "Basic Movements"         // Your trial workout name
+];
+```
+
+STEP 2: Deploy as Web App
+
+1. Click "Deploy" → "New deployment"
+2. Type: Web app
+3. Execute as: Me
+4. Who has access: Anyone
+5. Deploy
+6. Copy the deployment URL
+
+STEP 3: Setup Supabase Webhook
+
+In Supabase Dashboard:
+1. Database → Webhooks → Create webhook
+2. Name: auto-add-trial-users
+3. Table: auth.users
+4. Events: INSERT only
+5. Type: HTTP Request
+6. Method: POST
+7. URL: [Your deployment URL from Step 2]
+8. Payload:
+   ```json
+   {
+     "action": "addTrialUser",
+     "email": "{{ record.email }}",
+     "name": "{{ record.raw_user_meta_data.full_name }}"
+   }
+   ```
+9. Save webhook
+
+STEP 4: Test Automatic Trial
+
+1. Sign up with new email: test-trial@example.com
+2. Check Google Sheets → Users tab
+3. Should see new row:
+   test-trial@example.com | [7 days from now] | Trial Wkt 1 | ...
+4. Login with that account
+5. Should see "Trial: 7 days remaining"
+
+───────────────────────────────────────────────────────────────────────────
+PHASE 4: ADD PAYMENT SYSTEM (Week 2)
+───────────────────────────────────────────────────────────────────────────
+
+Follow PAYMENT-INTEGRATION-GUIDE.txt for complete Stripe setup
+
+Quick version:
+1. Create Stripe account
+2. Create subscription products (Monthly €29, Quarterly €69, Annual €249)
+3. Add payment.js to your project
+4. Setup Stripe webhooks
+5. Test with test card: 4242 4242 4242 4242
+
+When payment succeeds:
+→ Stripe webhook → Google Apps Script → Updates scadenza
+→ User instantly gets full access
+
+───────────────────────────────────────────────────────────────────────────
+CUSTOMIZATION OPTIONS
+───────────────────────────────────────────────────────────────────────────
+
+TRIAL DURATION
+Change in google-apps-script-with-trials.gs (Line 123):
+```javascript
+trialEndDate.setDate(trialEndDate.getDate() + 7);  // 7 days
+// Change to:
+trialEndDate.setDate(trialEndDate.getDate() + 14); // 14 days
+```
+
+TRIAL WORKOUTS
+Change in google-apps-script-with-trials.gs (Lines 130-133):
+```javascript
+const trialWorkouts = [
+  "Your Workout 1",
+  "Your Workout 2"
+];
+```
+
+PAID WORKOUTS
+Change in google-apps-script-with-trials.gs (Lines 221-226):
+```javascript
+const paidWorkouts = [
+  "Full Body Workout",
+  "Upper Body Focus",
+  "Lower Body Strength"
+];
+```
+
+PRICING
+Change in access-control.js (Lines 322-362):
+```javascript
+<div class="price">€29<span>/month</span></div>  // Change amount
+```
+
+TRIAL ACCESS LEVEL
+Change in access-control.js (Line 238-252):
+```javascript
+// Show first workout fully, rest as preview
+if (index === 0) {  // Change to index < 2 for 2 free workouts
+  return `...full access...`;
+}
+```
+
+───────────────────────────────────────────────────────────────────────────
+WORKFLOW EXAMPLES
+───────────────────────────────────────────────────────────────────────────
+
+Example 1: New User Trial
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Day 0: User signs up                                                    │
+│   → Email: newuser@email.com                                            │
+│   → Automatically added to Google Sheets                                │
+│   → scadenza: 2025-11-16 (7 days)                                       │
+│   → Workouts: "Trial Workout 1"                                         │
+│                                                                         │
+│ Day 0-6: User has trial access                                          │
+│   → Can use 1 workout                                                   │
+│   → Sees "Trial: X days remaining" banner                               │
+│   → Gets prompts to upgrade                                             │
+│                                                                         │
+│ Day 7: Trial expires                                                    │
+│   → scadenza is now past date                                           │
+│   → Access level: EXPIRED                                               │
+│   → Sees locked workouts + "Renew" CTA                                  │
+│                                                                         │
+│ Day 8: User subscribes (€29/month)                                      │
+│   → Stripe payment succeeds                                             │
+│   → Webhook updates scadenza: 2025-12-16                                │
+│   → Access level: ACTIVE                                                │
+│   → Full access to all workouts                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+
+Example 2: Direct Payment (No Trial)
+┌─────────────────────────────────────────────────────────────────────────┐
+│ User signs up → Immediately clicks "Subscribe"                          │
+│   → Chooses Annual (€249)                                               │
+│   → Payment succeeds                                                    │
+│   → Added to Sheets with scadenza: 2026-11-09                           │
+│   → Gets all premium workouts                                           │
+│   → No trial needed                                                     │
+└─────────────────────────────────────────────────────────────────────────┘
+
+Example 3: Subscription Renewal
+┌─────────────────────────────────────────────────────────────────────────┐
+│ User subscribed: 2025-11-09                                             │
+│ scadenza: 2025-12-09                                                    │
+│                                                                         │
+│ 2025-12-09: Stripe auto-charges €29                                     │
+│   → Payment succeeds                                                    │
+│   → Webhook updates scadenza: 2026-01-09                                │
+│   → User keeps full access (no interruption)                            │
+└─────────────────────────────────────────────────────────────────────────┘
+
+───────────────────────────────────────────────────────────────────────────
+ADMIN TASKS IN GOOGLE SHEETS
+───────────────────────────────────────────────────────────────────────────
+
+Give User Free Month:
+1. Find their row
+2. Change scadenza to +30 days from current date
+3. They instantly get extended access
+
+Upgrade Trial to Paid (Manual):
+1. Find their row in Google Sheets
+2. Update scadenza: set to 30/90/365 days in future
+3. Add more workouts in columns C, D, E
+4. User instantly sees new workouts
+
+Cancel Subscription:
+1. Find their row
+2. Set scadenza to past date (e.g., today)
+3. They lose access immediately
+4. Or delete row entirely
+
+Extend as Gift:
+1. Run from Script Editor: extendUserSubscription("user@email.com", 3)
+2. Extends by 3 months
+
+Check Expired Users:
+1. Run from Script Editor: getExpiredUsers()
+2. See list in Logs
+3. Email them renewal offers
+
+───────────────────────────────────────────────────────────────────────────
+MONITORING & ANALYTICS
+───────────────────────────────────────────────────────────────────────────
+
+In Google Sheets, create a "Dashboard" tab with formulas:
+
+Active Subscriptions:
+```
+=COUNTIF(Users!B:B,">"&TODAY())
+```
+
+Trial Users (expires within 7 days):
+```
+=COUNTIFS(Users!B:B,">"&TODAY(), Users!B:B,"<="&TODAY()+7)
+```
+
+Expired Users:
+```
+=COUNTIF(Users!B:B,"<"&TODAY())
+```
+
+Monthly Revenue (if all €29):
+```
+=COUNTIF(Users!B:B,">"&TODAY())*29
+```
+
+Trial Conversion Rate:
+Create a "Conversions" sheet tracking:
+- Date trial started
+- Date converted (paid)
+- Calculate: (Converted / Total Trials) * 100
+
+───────────────────────────────────────────────────────────────────────────
+MARKETING STRATEGIES
+───────────────────────────────────────────────────────────────────────────
+
+Maximize Trial Conversions:
+
+Day 1: Welcome email with trial details
+Day 3: Tutorial email "Getting started"
+Day 5: Success stories / testimonials
+Day 6: "Last day!" urgency email
+Day 7: "Trial expired - Special offer" (10% discount)
+
+Prevent Churn:
+
+7 days before expiry: "Renewal coming" reminder
+3 days before: "Your subscription ends soon"
+1 day after expiry: "We miss you! Come back" (50% discount)
+
+Upsell Annual Plans:
+
+Monthly users at month 3: "Save with annual" email
+Show annual savings prominently in UI
+Offer bonus (1-on-1 coaching) with annual
+
+───────────────────────────────────────────────────────────────────────────
+TROUBLESHOOTING
+───────────────────────────────────────────────────────────────────────────
+
+❌ User signs up but not added to Sheets
+→ Check Supabase webhook logs
+→ Verify webhook URL is correct
+→ Check Google Apps Script logs
+
+❌ Trial user sees "No workouts assigned"
+→ Check trial workout names match exactly
+→ Verify scadenza is future date
+→ Check email case (should be lowercase)
+
+❌ Paid user still sees trial banner
+→ Check scadenza is > 7 days in future
+→ Refresh page to reload data
+→ Check access-control.js is loading
+
+❌ Payment succeeds but no access
+→ Check Stripe webhook delivery
+→ Verify email matches exactly
+→ Check Google Apps Script webhook handler
+
+❌ Renewal not extending scadenza
+→ Check Stripe webhook events (invoice.paid)
+→ Verify webhook handler updates date
+→ Check Script execution logs
+
+───────────────────────────────────────────────────────────────────────────
+TESTING CHECKLIST
+───────────────────────────────────────────────────────────────────────────
+
+□ Sign up creates Supabase account
+□ New user automatically added to Google Sheets
+□ Trial scadenza set to +7 days
+□ Trial user sees limited access banner
+□ Trial user can start first workout
+□ Other workouts show as locked
+□ Expired user sees renewal prompt
+□ Payment link works (test mode)
+□ Payment success updates scadenza
+□ Paid user sees all workouts unlocked
+□ Subscription renews automatically
+□ Renewal extends scadenza
+□ Manual scadenza changes reflected immediately
+□ Logout works properly
+□ Session persists on refresh
+
+───────────────────────────────────────────────────────────────────────────
+LEGAL CONSIDERATIONS
+───────────────────────────────────────────────────────────────────────────
+
+Add to your website:
+□ Terms of Service (trial terms, cancellation policy)
+□ Privacy Policy (how data is used)
+□ Refund Policy (Stripe handles this well)
+□ GDPR compliance (if EU users)
+□ Cookie notice
+
+Stripe Billing Portal:
+Enable customer portal in Stripe to let users:
+- Update payment method
+- Cancel subscription
+- View invoices
+- Download receipts
+
+───────────────────────────────────────────────────────────────────────────
+NEXT STEPS AFTER LAUNCH
+───────────────────────────────────────────────────────────────────────────
+
+Week 1-2: Monitor and fix issues
+- Watch webhook logs
+- Check conversion rates
+- Fix any bugs
+
+Week 3-4: Optimize
+- A/B test pricing
+- Improve trial workouts
+- Add email automation
+
+Month 2: Enhance
+- Add referral program
+- Create nutrition section
+- Add progress tracking
+
+Month 3+: Scale
+- Partner with gyms
+- Launch mobile app
+- Expand workout library
+
+───────────────────────────────────────────────────────────────────────────
+SUPPORT RESOURCES
+───────────────────────────────────────────────────────────────────────────
+
+Files in this package:
+- QUICK-START-GUIDE.txt (Authentication setup)
+- PAYMENT-INTEGRATION-GUIDE.txt (Stripe setup)
+- access-control.js (All access logic - read the comments!)
+- google-apps-script-with-trials.gs (Backend logic)
+
+External docs:
+- Supabase: https://supabase.com/docs
+- Stripe: https://stripe.com/docs
+- Google Apps Script: https://developers.google.com/apps-script
+
+───────────────────────────────────────────────────────────────────────────
+
+You now have everything you need to build a complete freemium fitness app!
+
+🎯 Start with Phase 1 (authentication)
+🎯 Add Phase 2 (access control) 
+🎯 Implement Phase 3 (automatic trials)
+🎯 Launch Phase 4 (payments) when ready
+
+Your competitive advantages:
+✅ Professional authentication (not plain text passwords!)
+✅ Automatic trial system (no manual work)
+✅ Flexible access control (easy to customize)
+✅ Payment integration (automated renewals)
+✅ Easy management (just edit Google Sheets)
+
+Good luck with your launch! 🚀💪
+
+═══════════════════════════════════════════════════════════════════════════
